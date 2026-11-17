@@ -5,6 +5,7 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nuten.url = "github:mst-mkt/nuten";
   };
 
   outputs =
@@ -12,6 +13,7 @@
       self,
       nixpkgs,
       treefmt-nix,
+      nuten,
       ...
     }:
     let
@@ -25,12 +27,14 @@
       treefmtOf =
         pkgs:
         treefmt-nix.lib.evalModule pkgs {
+          imports = [ nuten.treefmtModule ];
           projectRootFile = "flake.nix";
           programs = {
             nixfmt.enable = true;
             gleam.enable = true;
             taplo.enable = true;
             oxfmt.enable = true;
+            nuten.enable = true;
           };
           settings.formatter.taplo.excludes = [ "manifest.toml" ];
         };
