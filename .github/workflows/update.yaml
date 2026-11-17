@@ -1,0 +1,164 @@
+name: update
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  NIX_CONFIG: |
+    extra-substituters = https://nuten.cachix.org
+    extra-trusted-public-keys = nuten.cachix.org-1:UQhrCY0F6u/dOjkl0oySJqXRlG0gbYXl8o7AQ4bmcDs=
+
+jobs:
+  flake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      REVS: '.nodes | to_entries[] | "\(.key) \(.value.locked.rev[:7])"'
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31.11.5
+      - name: Save current revisions
+        run: jq -r "$REVS" flake.lock > "$RUNNER_TEMP/old.txt"
+      - name: nix flake update
+        run: nix flake update
+      - name: Save new revisions
+        run: jq -r "$REVS" flake.lock > "$RUNNER_TEMP/new.txt"
+      - name: List updated inputs
+        run: |
+          join "$RUNNER_TEMP/old.txt" "$RUNNER_TEMP/new.txt" \
+          | awk '$2 != $3 { print "-", $1 ":", $2, "to", $3 }' \
+          > "$RUNNER_TEMP/body.md"
+      - uses: $/.github/actions/pull-request
+        with:
+          branch: update/flake
+          title: "chore: update flake inputs"
+          body-file: ${{ runner.temp }}/body.md
+
+  tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Save current versions
+        run: cp .tool-versions "$RUNNER_TEMP/old.txt"
+      - name: Update erlang
+        run: |
+          version=$(gh release view -R erlang/otp --json tagName --jq '.tagName | ltrimstr("OTP-")')
+          sed -i "s/^erlang .*/erlang $version/" .tool-versions
+      - name: Update gleam
+        run: |
+          version=$(gh release view -R gleam-lang/gleam --json tagName --jq '.tagName | ltrimstr("v")')
+          sed -i "s/^gleam .*/gleam $version/" .tool-versions
+      - name: Update nodejs
+        run: |
+          version=$(gh release list -R nodejs/node --json tagName --jq '[.[] | select(.tagName | startswith("v26."))][0].tagName | ltrimstr("v")')
+          sed -i "s/^nodejs .*/nodejs $version/" .tool-versions
+      - name: List updated tools
+        run: |
+          join "$RUNNER_TEMP/old.txt" .tool-versions \
+          | awk '$2 != $3 { print "-", $1 ":", $2, "to", $3 }' \
+          > "$RUNNER_TEMP/body.md"
+      - uses: $/.github/actions/pull-request
+        with:
+          branch: update/tools
+          title: "chore: update tools"
+          body-file: ${{ runner.temp }}/body.md
+
+  gleam-deps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: erlef/setup-beam@v1.24.1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+      - name: Save current versions
+        run: gleam deps list > "$RUNNER_TEMP/old.txt"
+      - name: gleam update
+        run: gleam update
+      - name: Save new versions
+        run: gleam deps list > "$RUNNER_TEMP/new.txt"
+      - name: List updated dependencies
+        run: |
+          join "$RUNNER_TEMP/old.txt" "$RUNNER_TEMP/new.txt" \
+          | awk '$2 != $3 { print "-", $1 ":", $2, "to", $3 }' \
+          > "$RUNNER_TEMP/body.md"
+      - uses: $/.github/actions/pull-request
+        with:
+          branch: update/gleam-deps
+          title: "chore: update gleam dependencies"
+          body-file: ${{ runner.temp }}/body.md
+
+  budoux-upstream:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31.11.5
+      - name: Get the current release
+        id: old
+        run: |
+          tag=$(grep -o 'github:google/budoux/[^"]*' flake.nix | cut -d / -f 3)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Get the latest release
+        id: new
+        run: |
+          tag=$(gh release view -R google/budoux --json tagName --jq .tagName)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Update flake.nix
+        run: sed -i "s|github:google/budoux/$OLD|github:google/budoux/$NEW|" flake.nix
+        env:
+          OLD: ${{ steps.old.outputs.tag }}
+          NEW: ${{ steps.new.outputs.tag }}
+      - name: nix flake update budoux-upstream
+        run: nix flake update budoux-upstream
+      - name: nix run .#generate
+        run: nix run .#generate
+      - name: Write pull request body
+        run: echo "Updates google/budoux from $OLD to [$NEW](https://github.com/google/budoux/releases/tag/$NEW) and regenerates the models." > "$RUNNER_TEMP/body.md"
+        env:
+          OLD: ${{ steps.old.outputs.tag }}
+          NEW: ${{ steps.new.outputs.tag }}
+      - uses: $/.github/actions/pull-request
+        with:
+          branch: update/budoux-upstream
+          title: "chore: update budoux-upstream to ${{ steps.new.outputs.tag }}"
+          body-file: ${{ runner.temp }}/body.md

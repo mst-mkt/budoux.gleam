@@ -1,0 +1,50 @@
+name: pull-request
+description: Commit the changes, open a pull request for them, and run the check workflow on it
+
+inputs:
+  branch:
+    description: Branch to push the changes to
+    required: true
+  title:
+    description: Commit message and pull request title
+    required: true
+  body-file:
+    description: File containing the pull request body
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Stage changes
+      shell: bash
+      run: git add --all
+    - name: Check for changes
+      id: diff
+      shell: bash
+      run: git diff --cached --quiet || echo "changed=true" >> "$GITHUB_OUTPUT"
+    - name: Push changes
+      if: ${{ steps.diff.outputs.changed }}
+      shell: bash
+      run: |
+        git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit --message "$TITLE"
+        gh auth setup-git
+        git push --force origin "HEAD:refs/heads/$BRANCH"
+      env:
+        BRANCH: ${{ inputs.branch }}
+        TITLE: ${{ inputs.title }}
+        GH_TOKEN: ${{ github.token }}
+    - name: Create pull request
+      if: ${{ steps.diff.outputs.changed }}
+      shell: bash
+      run: |
+        if [ "$(gh pr list --head "$BRANCH" --state open --json number --jq length)" -eq 0 ]; then
+          gh pr create --head "$BRANCH" --title "$TITLE" --body-file "$BODY_FILE"
+        else
+          gh pr edit "$BRANCH" --title "$TITLE" --body-file "$BODY_FILE"
+        fi
+        gh workflow run check.yaml --ref "$BRANCH"
+      env:
+        BRANCH: ${{ inputs.branch }}
+        TITLE: ${{ inputs.title }}
+        BODY_FILE: ${{ inputs.body-file }}
+        GH_TOKEN: ${{ github.token }}
