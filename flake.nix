@@ -71,6 +71,7 @@
               text = ''
                 cd "$(git rev-parse --show-toplevel)"
                 nu codegen/models.nu ${budoux-upstream}
+                nu codegen/quality_cases.nu ${budoux-upstream}
               '';
             }
           );

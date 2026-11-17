@@ -1,6 +1,8 @@
 import budoux
 import budoux/model.{Model}
+import budoux/quality_cases
 import gleam/list
+import gleam/string
 import gleeunit
 
 pub fn main() -> Nil {
@@ -225,4 +227,17 @@ pub fn th_parses_sentence_test() {
   let result = budoux.parse(parser, "วันนี้อากาศดี")
 
   assert result == ["วัน", "นี้", "อากาศ", "ดี"]
+}
+
+pub fn ja_passes_quality_cases_test() {
+  let parser = budoux.ja()
+
+  list.each(quality_cases.ja, fn(test_case) {
+    let #(label, expected) = test_case
+    let sentence = string.replace(expected, "▁", "")
+
+    let result = budoux.parse(parser, sentence) |> string.join("▁")
+
+    assert result == expected as label
+  })
 }

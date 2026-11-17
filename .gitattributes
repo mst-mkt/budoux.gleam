@@ -1,1 +1,2 @@
 src/budoux/model/*.gleam linguist-generated=true
+test/budoux/quality_cases.gleam linguist-generated=true
