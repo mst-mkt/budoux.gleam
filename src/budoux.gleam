@@ -10,6 +10,9 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 
+/// A parser that splits sentences into phrases.
+///
+/// Creating one takes some time, so create it once and reuse it.
 pub opaque type Parser {
   Parser(
     total: Int,
@@ -29,6 +32,7 @@ pub opaque type Parser {
   )
 }
 
+/// Creates a parser from a model.
 pub fn new(model: Model) -> Parser {
   let total =
     [
@@ -67,26 +71,39 @@ pub fn new(model: Model) -> Parser {
   )
 }
 
+/// Creates a parser with the Japanese model.
 pub fn ja() -> Parser {
   new(ja.model)
 }
 
+/// Creates a parser with the Japanese word model.
+/// It splits sentences into words rather than phrases.
 pub fn ja_word() -> Parser {
   new(ja_word.model)
 }
 
+/// Creates a parser with the Thai model.
 pub fn th() -> Parser {
   new(th.model)
 }
 
+/// Creates a parser with the Simplified Chinese model.
 pub fn zh_hans() -> Parser {
   new(zh_hans.model)
 }
 
+/// Creates a parser with the Traditional Chinese model.
 pub fn zh_hant() -> Parser {
   new(zh_hant.model)
 }
 
+/// Splits a sentence into phrases.
+///
+/// ```gleam
+/// let parser = budoux.ja()
+/// budoux.parse(parser, "今日は天気です。")
+/// // -> ["今日は", "天気です。"]
+/// ```
 pub fn parse(parser: Parser, sentence: String) -> List(String) {
   case to_chars(sentence) {
     [] -> []

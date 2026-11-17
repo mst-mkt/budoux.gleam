@@ -1,6 +1,10 @@
 import gleam/dict
 import gleam/dynamic/decode
 
+/// The scores of a BudouX model, grouped in the same way as its JSON file.
+///
+/// Each group maps one to three characters around a position to a score.
+/// A character means a Unicode code point, not a grapheme cluster.
 pub type Model {
   Model(
     uw1: List(#(String, Int)),
@@ -19,6 +23,12 @@ pub type Model {
   )
 }
 
+/// A model with no scores.
+/// Use it to build a model with only some groups.
+///
+/// ```gleam
+/// Model(..model.empty, uw4: [#("a", 10_000)])
+/// ```
 pub const empty =
   Model(
     uw1: [],
@@ -36,6 +46,13 @@ pub const empty =
     tw4: [],
   )
 
+/// Decodes a model from the JSON format used by BudouX.
+/// Missing groups are treated as empty.
+///
+/// ```gleam
+/// let assert Ok(custom) = json.parse(model_json, model.decoder())
+/// let parser = budoux.new(custom)
+/// ```
 pub fn decoder() -> decode.Decoder(Model) {
   use uw1 <- group("UW1")
   use uw2 <- group("UW2")
