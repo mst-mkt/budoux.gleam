@@ -5,5 +5,8 @@ licences = ["Apache-2.0"]
 repository = { type = "github", user = "mst-mkt", repo = "budoux.gleam" }
 links = [{ title = "google/budoux", href = "https://github.com/google/budoux" }]
 
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+
 [dev_dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
