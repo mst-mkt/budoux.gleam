@@ -165,3 +165,64 @@ pub fn separates_by_code_points_not_graphemes_test() {
 
   assert result == ["ก", "ี"]
 }
+
+pub fn ja_parses_sentence_test() {
+  let parser = budoux.ja()
+
+  let result =
+    budoux.parse(parser, "Google の使命は、世界中の情報を整理し、世界中の人がアクセスできて使えるようにすることです。")
+
+  assert result
+    == [
+      "Google の", "使命は、", "世界中の", "情報を", "整理し、", "世界中の", "人が", "アクセスできて",
+      "使えるように", "する", "ことです。",
+    ]
+}
+
+pub fn ja_parses_short_sentence_test() {
+  let parser = budoux.ja()
+
+  let result = budoux.parse(parser, "今日は天気です。")
+
+  assert result == ["今日は", "天気です。"]
+}
+
+pub fn ja_does_not_separate_around_whitespace_test() {
+  let parser = budoux.ja()
+
+  let result = budoux.parse(parser, " 1  \n  2 ")
+
+  assert result == [" 1  \n  2 "]
+}
+
+pub fn zh_hans_parses_sentence_test() {
+  let parser = budoux.zh_hans()
+
+  let result = budoux.parse(parser, "我们的使命是整合全球信息，供大众使用，让人人受益。")
+
+  assert result
+    == [
+      "我们", "的", "使命", "是", "整合", "全球", "信息，", "供", "大众", "使用，", "让", "人人",
+      "受益。",
+    ]
+}
+
+pub fn zh_hant_parses_sentence_test() {
+  let parser = budoux.zh_hant()
+
+  let result = budoux.parse(parser, "我們的使命是匯整全球資訊，供大眾使用，使人人受惠。")
+
+  assert result
+    == [
+      "我們", "的", "使命", "是", "匯整", "全球", "資訊，", "供", "大眾", "使用，", "使", "人人",
+      "受惠。",
+    ]
+}
+
+pub fn th_parses_sentence_test() {
+  let parser = budoux.th()
+
+  let result = budoux.parse(parser, "วันนี้อากาศดี")
+
+  assert result == ["วัน", "นี้", "อากาศ", "ดี"]
+}

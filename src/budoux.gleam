@@ -1,4 +1,9 @@
 import budoux/model.{type Model}
+import budoux/model/ja
+import budoux/model/ja_word
+import budoux/model/th
+import budoux/model/zh_hans
+import budoux/model/zh_hant
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -60,6 +65,26 @@ pub fn new(model: Model) -> Parser {
     tw3: dict.from_list(model.tw3),
     tw4: dict.from_list(model.tw4),
   )
+}
+
+pub fn ja() -> Parser {
+  new(ja.model)
+}
+
+pub fn ja_word() -> Parser {
+  new(ja_word.model)
+}
+
+pub fn th() -> Parser {
+  new(th.model)
+}
+
+pub fn zh_hans() -> Parser {
+  new(zh_hans.model)
+}
+
+pub fn zh_hant() -> Parser {
+  new(zh_hant.model)
 }
 
 pub fn parse(parser: Parser, sentence: String) -> List(String) {
