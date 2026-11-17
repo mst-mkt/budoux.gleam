@@ -1,0 +1,49 @@
+name: tagpr
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  tagpr:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+      issues: read
+    outputs:
+      tag: ${{ steps.tagpr.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: Songmu/tagpr@v1.22.0
+        id: tagpr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Run check
+        if: ${{ steps.tagpr.outputs.pull_request && !steps.tagpr.outputs.tag }}
+        run: gh workflow run check.yaml --ref "$BRANCH"
+        env:
+          BRANCH: ${{ fromJSON(steps.tagpr.outputs.pull_request).head.ref }}
+          GH_TOKEN: ${{ github.token }}
+
+  release:
+    needs: tagpr
+    if: ${{ needs.tagpr.outputs.tag }}
+    permissions:
+      contents: read
+    uses: $/.github/workflows/release.yaml
+    with:
+      tag: ${{ needs.tagpr.outputs.tag }}
+    secrets:
+      HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
