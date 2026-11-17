@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "budoux-upstream": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794798863,
+        "narHash": "sha256-OOfPWPRKa6W3vepIwowNWgFMMubI00CqZfRYEdTNsks=",
+        "owner": "google",
+        "repo": "budoux",
+        "rev": "6dbda5e74adc32002e8b4ef7a25a66342b82efaa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "google",
+        "ref": "v0.10.4",
+        "repo": "budoux",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1791754810,
@@ -91,6 +108,7 @@
     },
     "root": {
       "inputs": {
+        "budoux-upstream": "budoux-upstream",
         "nixpkgs": "nixpkgs",
         "nuten": "nuten",
         "treefmt-nix": "treefmt-nix"

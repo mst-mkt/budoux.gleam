@@ -6,6 +6,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nuten.url = "github:mst-mkt/nuten";
+
+    budoux-upstream = {
+      url = "github:google/budoux/v0.10.4";
+      flake = false;
+    };
   };
 
   outputs =
@@ -14,6 +19,7 @@
       nixpkgs,
       treefmt-nix,
       nuten,
+      budoux-upstream,
       ...
     }:
     let
@@ -46,7 +52,28 @@
             pkgs.gleam
             pkgs.beamPackages.erlang
             pkgs.nodejs-slim_24
+            pkgs.nushell
           ];
+        };
+      });
+
+      apps = forAllSystems (pkgs: {
+        generate = {
+          type = "app";
+          program = pkgs.lib.getExe (
+            pkgs.writeShellApplication {
+              name = "generate";
+              runtimeInputs = [
+                pkgs.git
+                pkgs.nushell
+                pkgs.gleam
+              ];
+              text = ''
+                cd "$(git rev-parse --show-toplevel)"
+                nu codegen/models.nu ${budoux-upstream}
+              '';
+            }
+          );
         };
       });
 
