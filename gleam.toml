@@ -1,5 +1,5 @@
 name = "budoux"
-version = "1.0.0"
+version = "1.0.1"
 description = "Gleam port of BudouX, a standalone, small, and language-neutral phrase segmenter that provides beautiful and legible line breaks"
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "mst-mkt", repo = "budoux.gleam" }
